@@ -1,0 +1,32 @@
+Questions About Statistical Learning 
+========================================================
+
+***
+
+### 03. Linear Regression
+#### How to use 'update', how does it work?
+
+```{r}
+fit3 = lm(medv ~ .,Boston)
+
+?update
+fit4 = update(fit3,~.- age - indus)
+summary(fit4)
+
+```
+
+#### Understand "*", which will contains term lstat, age , lstat*age, and intercept
+```{r}
+### Nonlinear terms and Interactions
+fit5=lm(medv~lstat*age,Boston)
+summary(fit5)
+
+```
+
+#### Use fix to open data set
+
+
+### contrasts
+***
+
+

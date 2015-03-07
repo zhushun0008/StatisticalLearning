@@ -1,0 +1,141 @@
+---
+title: "Chapter 04 for R Session"
+author: "Shun Zhu"
+date: "Saturday, March 07, 2015"
+output: pdf_document
+---
+
+
+***
+
+### Section 01 : Fitting model with logistic regression.
+
+```{r}
+# similar to library
+require(ISLR)
+library(ggplot2)
+library(GGally)
+names(Smarket)
+summary(Smarket)
+?Smarket
+?pairs
+# Why do we use col not color here?
+# Direction is a binary variable, so using col = Direction is very useful to display
+pairs(Smarket,col = Smarket$Direction)
+
+# ggpairs is slower than pairs, why?
+ggpairs(Smarket,col = Smarket$Direction)
+ggsave("smartetBycolor.png")
+# Logistic regression
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+            data=Smarket,family=binomial)
+# After summary, we can see there is significant p value, which does not mean there is no significant predictor and it reflects the predictors are highly correlated.
+summary(glm.fit)
+# This will make predictions on the training data that we use to fit the model.
+
+glm.probs=predict(glm.fit,type="response") 
+glm.probs[1:5]
+# We can turn those probabilities into classifications by thresholding at 0.5.
+
+glm.pred=ifelse(glm.probs>0.5,"Up","Down")
+attach(Smarket)
+# On the diagonals is where we do correct classification, and on the off diagonals is where we make mistakes.
+
+table(glm.pred,Direction)
+# On the training data, we do slightly better than chance.
+
+mean(glm.pred==Direction)
+
+# Make training and test set to test model whether it is overfitting or not.
+# train is logic vector with TRUE/FALSE.
+train = Year<2005
+glm.fit=glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,
+            data=Smarket,family=binomial, subset=train)
+# testdata is newdata.
+glm.probs=predict(glm.fit,newdata=Smarket[!train,],type="response") 
+glm.pred=ifelse(glm.probs >0.5,"Up","Down")
+Direction.2005=Smarket$Direction[!train]
+# Get confusion matrix.
+table(glm.pred,Direction.2005)
+
+# We do worse than null hypotheis. 0.48. We maybe overfitting.
+mean(glm.pred==Direction.2005)
+
+# Fit smaller model
+glm.fit=glm(Direction~Lag1+Lag2,
+            data=Smarket,family=binomial, subset=train)
+glm.probs=predict(glm.fit,newdata=Smarket[!train,],type="response") 
+glm.pred=ifelse(glm.probs >0.5,"Up","Down")
+table(glm.pred,Direction.2005)
+# We do better now.
+mean(glm.pred==Direction.2005)
+106/(76+106)
+summary(glm.fit)
+
+```
+
+***
+
+***
+
+### Section 02 : Linear Discriminant Analysis
+
+```{r}
+
+require(ISLR)
+require(MASS)
+?lda
+## Linear Discriminant Analysis
+lda.fit=lda(Direction~Lag1+Lag2,data=Smarket, subset=Year<2005)
+lda.fit
+plot(lda.fit)
+Smarket.2005=subset(Smarket,Year==2005)
+lda.pred=predict(lda.fit,Smarket.2005)
+lda.pred[1:5,]
+class(lda.pred)
+data.frame(lda.pred)[1:5,]
+table(lda.pred$class,Smarket.2005$Direction)
+mean(lda.pred$class==Smarket.2005$Direction)
+```
+***
+
+***
+
+### Section 03 : K-Nearest Neighbors
+
+```{r}
+
+library(class)
+?knn
+attach(Smarket)
+Xlag=cbind(Lag1,Lag2)
+Xlag[1:5,]
+train=Year<2005
+knn.pred=knn(Xlag[train,],Xlag[!train,],Direction[train],k=1)
+table(knn.pred,Direction[!train])
+# Here k = 1 is useless, 0.5 like a flipping a coin.
+mean(knn.pred==Direction[!train])
+
+# Use another k = 2
+# Because of the local min of k-neighbor, trying many times will get different performance. 
+knn.pred2=knn(Xlag[train,],Xlag[!train,],Direction[train],k = 2)
+table(knn.pred2,Direction[!train])
+# Here k = 2  improves performance, 0.5396825,0.5595238,etc. 
+mean(knn.pred2==Direction[!train])
+
+# Use another k = 3
+knn.pred3=knn(Xlag[train,],Xlag[!train,],Direction[train],k = 3)
+table(knn.pred3,Direction[!train])
+# Here k = 3 reduces performance, 0.5357
+mean(knn.pred3==Direction[!train])
+
+# Use another k = 4
+knn.pred4=knn(Xlag[train,],Xlag[!train,],Direction[train],k = 4)
+table(knn.pred4,Direction[!train])
+# Here k = 4 reduces performance, 0.5357
+mean(knn.pred4==Direction[!train])
+
+```
+
+***
+
